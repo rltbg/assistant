@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    @apply bg-neutral-950 text-neutral-50;
+  }
+
+  /* Safe area support for iOS */
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* Override html5-qrcode default styles */
+#qr-reader {
+  border: none !important;
+  padding: 0 !important;
+}
+#qr-reader video {
+  border-radius: 1rem;
+  width: 100% !important;
+  height: auto !important;
+}
+#qr-reader__scan_region {
+  background: transparent !important;
+}
+#qr-reader__dashboard {
+  display: none !important;
+}
