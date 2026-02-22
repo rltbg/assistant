@@ -6,6 +6,8 @@ Scan a food product's barcode and trace its full supply chain — where each ing
 
 **Youtube video:** [https://youtu.be/efZUCr14bko](https://youtu.be/efZUCr14bko)
 
+**Devpost Submission:** https://devpost.com/software/ahou
+
 ---
 
 ## Stack
