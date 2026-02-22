@@ -26,8 +26,20 @@ const novaLabels: Record<number, string> = {
   4: 'Ultra-proc.',
 }
 
+const VALID_GRADES = new Set(['a', 'b', 'c', 'd', 'e'])
+
 export default function ScoreBadge({ label, value, type }: ScoreBadgeProps) {
-  if (value === undefined || value === null || value === 'unknown' || value === '') {
+  const normalized = String(value ?? '').toLowerCase().trim()
+  const isInvalid =
+    value === undefined ||
+    value === null ||
+    normalized === '' ||
+    normalized === 'unknown' ||
+    normalized === 'not-applicable' ||
+    normalized === 'not_applicable' ||
+    (type !== 'nova' && !VALID_GRADES.has(normalized))
+
+  if (isInvalid) {
     return (
       <div className="flex flex-col items-center gap-1.5">
         <div className="w-12 h-12 rounded-xl bg-neutral-800 flex items-center justify-center text-neutral-500 font-bold text-lg">

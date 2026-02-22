@@ -27,32 +27,32 @@ export default function ScannerPage() {
     })
     scannerRef.current = scanner
 
-    Html5Qrcode.getCameras()
-      .then(cameras => {
+    const config = { fps: 10, qrbox: { width: 260, height: 100 } }
+    const onSuccess = (decodedText: string) => {
+      if (navigatedRef.current) return
+      navigatedRef.current = true
+      scanner.stop().catch(() => {}).finally(() => navigate(`/product/${decodedText}`))
+    }
+    const onError = () => {}
+
+    const startWithFacingMode = () =>
+      scanner.start({ facingMode: 'environment' }, config, onSuccess, onError)
+
+    const startWithCameraId = () =>
+      Html5Qrcode.getCameras().then(cameras => {
         if (!cameras?.length) throw new Error('No camera found')
-        // On mobile, the rear camera is usually last in the list
         const cameraId = cameras[cameras.length - 1].id
-        return scanner.start(
-          cameraId,
-          { fps: 10, qrbox: { width: 260, height: 100 } },
-          (decodedText) => {
-            if (navigatedRef.current) return
-            navigatedRef.current = true
-            scanner.stop().catch(() => {}).finally(() => {
-              navigate(`/product/${decodedText}`)
-            })
-          },
-          () => {},
-        )
+        return scanner.start(cameraId, config, onSuccess, onError)
       })
+
+    // iOS works best with facingMode; Android works best with camera ID
+    // Try facingMode first, fall back to camera enumeration
+    startWithFacingMode()
+      .catch(() => startWithCameraId())
       .then(() => setStatus('scanning'))
-      .catch((err) => {
+      .catch(() => {
         setStatus('error')
-        setError(
-          err?.message?.includes('Permission')
-            ? 'Camera access denied. Please allow camera access and try again.'
-            : 'Could not start camera. Try entering the barcode manually.',
-        )
+        setError('Could not access camera. Please allow camera access and try again.')
       })
 
     return () => {
