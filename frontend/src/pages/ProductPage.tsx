@@ -43,6 +43,10 @@ export default function ProductPage() {
       .finally(() => setLoading(false))
   }, [barcode])
 
+  useEffect(() => {
+    if (product) handleRunAnalysis()
+  }, [product])
+
   async function handleRunAnalysis() {
     if (!product) return
     setAnalysisLoading(true)
@@ -156,6 +160,13 @@ export default function ProductPage() {
               </div>
             </div>
 
+            {/* Product Journey */}
+            <CarbonMeter
+              result={analysisResult}
+              loading={analysisLoading}
+              error={analysisError}
+            />
+
             {/* Nutrition table */}
             {product.nutriments && (
               <div className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
@@ -233,13 +244,6 @@ export default function ProductPage() {
               </div>
             )}
 
-            {/* Carbon Meter */}
-            <CarbonMeter
-              result={analysisResult}
-              onRunAnalysis={handleRunAnalysis}
-              loading={analysisLoading}
-              error={analysisError}
-            />
           </>
         )}
       </div>

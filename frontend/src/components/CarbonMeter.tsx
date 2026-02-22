@@ -1,14 +1,14 @@
 import { Leaf, Lock, MapPin, ArrowDown, ExternalLink } from 'lucide-react'
+
 import type { AnalysisResult } from '../types/product'
 
 interface CarbonMeterProps {
   result?: AnalysisResult
-  onRunAnalysis: () => void
   loading?: boolean
   error?: string | null
 }
 
-export default function CarbonMeter({ result, onRunAnalysis, loading, error }: CarbonMeterProps) {
+export default function CarbonMeter({ result, loading, error }: CarbonMeterProps) {
   return (
     <div className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800 space-y-5">
       <div className="flex items-center gap-2">
@@ -79,45 +79,25 @@ export default function CarbonMeter({ result, onRunAnalysis, loading, error }: C
             </div>
           )}
 
-          <button
-            onClick={onRunAnalysis}
-            disabled={loading}
-            className="w-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm font-medium py-2.5 rounded-xl transition-colors"
-          >
-            Re-run analysis
-          </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="flex flex-col items-center gap-3 py-4">
           {error ? (
             <p className="text-sm text-red-400">{error}</p>
+          ) : loading ? (
+            <>
+              <svg className="animate-spin w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <p className="text-sm text-neutral-500">Tracing supply chain…</p>
+            </>
           ) : (
             <p className="text-sm text-neutral-500 flex items-center gap-1.5">
               <Lock className="w-3 h-3" />
-              Trace where this product comes from
+              No journey data available
             </p>
           )}
-
-          <button
-            onClick={onRunAnalysis}
-            disabled={loading}
-            className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Analyzing…
-              </>
-            ) : (
-              <>
-                <Leaf className="w-5 h-5" />
-                Trace Journey
-              </>
-            )}
-          </button>
         </div>
       )}
     </div>
