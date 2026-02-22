@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Leaf, AlertTriangle, ChevronDown, ChevronUp, Globe } from 'lucide-react'
-import { fetchProduct } from '../api/product'
-import type { Product } from '../types/product'
+import { fetchProduct, analyzeProduct } from '../api/product'
+import type { Product, AnalysisResult } from '../types/product'
 import ScoreBadge from '../components/ScoreBadge'
 import NutrientLevelBar from '../components/NutrientLevelBar'
 import CarbonMeter from '../components/CarbonMeter'
@@ -30,6 +30,8 @@ export default function ProductPage() {
   const [error, setError] = useState<string | null>(null)
   const [showIngredients, setShowIngredients] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | undefined>()
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!barcode) return
@@ -41,10 +43,30 @@ export default function ProductPage() {
       .finally(() => setLoading(false))
   }, [barcode])
 
-  function handleRunAnalysis() {
+  async function handleRunAnalysis() {
+    if (!product) return
     setAnalysisLoading(true)
-    // Placeholder — AI analysis to be implemented
-    setTimeout(() => setAnalysisLoading(false), 2000)
+    setAnalysisError(null)
+
+    const stored = localStorage.getItem('ecotrace_location')
+    const location = stored ? JSON.parse(stored).label : 'France'
+
+    try {
+      const result = await analyzeProduct({
+        product_name: product.product_name_fr ?? product.product_name ?? '',
+        brand: product.brands?.split(',')[0].trim() ?? '',
+        ingredients: product.ingredients_text_fr ?? product.ingredients_text ?? '',
+        origins: product.origins ?? product.manufacturing_places ?? '',
+        user_location: location,
+        quantity: product.quantity ?? '',
+        ecoscore_grade: product.ecoscore_grade ?? '',
+      })
+      setAnalysisResult(result)
+    } catch (e: unknown) {
+      setAnalysisError(e instanceof Error ? e.message : 'Analysis failed')
+    } finally {
+      setAnalysisLoading(false)
+    }
   }
 
   const name = product?.product_name_fr || product?.product_name || product?.product_name_en || 'Unknown product'
@@ -106,7 +128,7 @@ export default function ProductPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-transparent" />
                 </div>
               ) : (
-                <div className="rounded-2xl bg-neutral-900 h-40 flex items-center justify-center text-neutral-700">
+                <div className="rounded-2xl bg-neutral-900 h-40 flex items-center justify-center">
                   <span className="text-5xl">📦</span>
                 </div>
               )}
@@ -126,16 +148,8 @@ export default function ProductPage() {
             <div className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
               <p className="text-xs text-neutral-500 uppercase tracking-wide mb-4">Quality scores</p>
               <div className="flex justify-around">
-                <ScoreBadge
-                  label="Nutri-Score"
-                  value={product.nutriscore_grade}
-                  type="nutriscore"
-                />
-                <ScoreBadge
-                  label="NOVA group"
-                  value={product.nova_group}
-                  type="nova"
-                />
+                <ScoreBadge label="Nutri-Score" value={product.nutriscore_grade} type="nutriscore" />
+                <ScoreBadge label="NOVA group"  value={product.nova_group}        type="nova" />
                 <ScoreBadge
                   label="Eco-Score"
                   value={product.ecoscore_grade === 'unknown' ? undefined : product.ecoscore_grade}
@@ -151,19 +165,19 @@ export default function ProductPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Calories', value: product.nutriments['energy-kcal_100g'], unit: ' kcal' },
-                    { label: 'Fat', value: product.nutriments.fat_100g, unit: 'g' },
-                    { label: 'Carbs', value: product.nutriments.carbohydrates_100g, unit: 'g' },
-                    { label: 'Sugars', value: product.nutriments.sugars_100g, unit: 'g' },
-                    { label: 'Proteins', value: product.nutriments.proteins_100g, unit: 'g' },
-                    { label: 'Salt', value: product.nutriments.salt_100g, unit: 'g' },
-                  ].map(({ label, value, unit }) => (
-                    value !== undefined && (
+                    { label: 'Fat',      value: product.nutriments.fat_100g,            unit: 'g' },
+                    { label: 'Carbs',   value: product.nutriments.carbohydrates_100g,  unit: 'g' },
+                    { label: 'Sugars',  value: product.nutriments.sugars_100g,         unit: 'g' },
+                    { label: 'Proteins',value: product.nutriments.proteins_100g,       unit: 'g' },
+                    { label: 'Salt',    value: product.nutriments.salt_100g,           unit: 'g' },
+                  ].map(({ label, value, unit }) =>
+                    value !== undefined ? (
                       <div key={label} className="bg-neutral-800/60 rounded-xl p-3">
                         <p className="text-xs text-neutral-500 mb-0.5">{label}</p>
                         <p className="text-white font-semibold">{value}{unit}</p>
                       </div>
-                    )
-                  ))}
+                    ) : null
+                  )}
                 </div>
               </div>
             )}
@@ -172,26 +186,10 @@ export default function ProductPage() {
             {product.nutrient_levels && Object.keys(product.nutrient_levels).length > 0 && (
               <div className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800 space-y-3">
                 <p className="text-xs text-neutral-500 uppercase tracking-wide">Nutrient levels</p>
-                <NutrientLevelBar
-                  label="Fat"
-                  level={product.nutrient_levels.fat}
-                  value={product.nutriments?.fat_100g}
-                />
-                <NutrientLevelBar
-                  label="Saturated fat"
-                  level={product.nutrient_levels['saturated-fat']}
-                  value={product.nutriments?.['saturated-fat_100g']}
-                />
-                <NutrientLevelBar
-                  label="Sugars"
-                  level={product.nutrient_levels.sugars}
-                  value={product.nutriments?.sugars_100g}
-                />
-                <NutrientLevelBar
-                  label="Salt"
-                  level={product.nutrient_levels.salt}
-                  value={product.nutriments?.salt_100g}
-                />
+                <NutrientLevelBar label="Fat"           level={product.nutrient_levels.fat}              value={product.nutriments?.fat_100g} />
+                <NutrientLevelBar label="Saturated fat" level={product.nutrient_levels['saturated-fat']} value={product.nutriments?.['saturated-fat_100g']} />
+                <NutrientLevelBar label="Sugars"        level={product.nutrient_levels.sugars}           value={product.nutriments?.sugars_100g} />
+                <NutrientLevelBar label="Salt"          level={product.nutrient_levels.salt}             value={product.nutriments?.salt_100g} />
               </div>
             )}
 
@@ -201,9 +199,7 @@ export default function ProductPage() {
                 <p className="text-xs text-orange-400 uppercase tracking-wide mb-2 font-medium">Contains allergens</p>
                 <div className="flex flex-wrap gap-2">
                   {allergens.map(a => (
-                    <span key={a} className="text-xs bg-orange-900/50 text-orange-300 px-2.5 py-1 rounded-full capitalize">
-                      {a}
-                    </span>
+                    <span key={a} className="text-xs bg-orange-900/50 text-orange-300 px-2.5 py-1 rounded-full capitalize">{a}</span>
                   ))}
                 </div>
               </div>
@@ -217,18 +213,13 @@ export default function ProductPage() {
                   className="w-full flex items-center justify-between"
                 >
                   <p className="text-xs text-neutral-500 uppercase tracking-wide">Ingredients</p>
-                  {showIngredients ? (
-                    <ChevronUp className="w-4 h-4 text-neutral-500" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-neutral-500" />
-                  )}
+                  {showIngredients
+                    ? <ChevronUp className="w-4 h-4 text-neutral-500" />
+                    : <ChevronDown className="w-4 h-4 text-neutral-500" />}
                 </button>
-                {showIngredients && (
-                  <p className="text-sm text-neutral-300 leading-relaxed mt-3">{ingredients}</p>
-                )}
-                {!showIngredients && (
-                  <p className="text-sm text-neutral-500 mt-1 line-clamp-2">{ingredients}</p>
-                )}
+                <p className={`text-sm text-neutral-300 leading-relaxed mt-3 ${showIngredients ? '' : 'line-clamp-2 text-neutral-500'}`}>
+                  {ingredients}
+                </p>
               </div>
             )}
 
@@ -240,16 +231,16 @@ export default function ProductPage() {
                   <p className="text-xs text-neutral-500 uppercase tracking-wide">Origin</p>
                 </div>
                 {product.origins && <p className="text-sm text-neutral-300">{product.origins}</p>}
-                {product.manufacturing_places && (
-                  <p className="text-sm text-neutral-400">{product.manufacturing_places}</p>
-                )}
+                {product.manufacturing_places && <p className="text-sm text-neutral-400">{product.manufacturing_places}</p>}
               </div>
             )}
 
             {/* Carbon Meter */}
             <CarbonMeter
+              result={analysisResult}
               onRunAnalysis={handleRunAnalysis}
               loading={analysisLoading}
+              error={analysisError}
             />
           </>
         )}
