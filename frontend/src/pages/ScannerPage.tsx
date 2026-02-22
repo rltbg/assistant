@@ -1,50 +1,58 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Html5QrcodeScanner } from 'html5-qrcode'
-import { ArrowLeft } from 'lucide-react'
+import { Html5Qrcode } from 'html5-qrcode'
+import { ArrowLeft, ScanLine } from 'lucide-react'
 
 export default function ScannerPage() {
   const navigate = useNavigate()
+  const [status, setStatus] = useState<'init' | 'scanning' | 'error'>('init')
+  const [error, setError] = useState<string | null>(null)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
   const navigatedRef = useRef(false)
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null)
+  const startedRef = useRef(false)
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner(
-      'qr-reader',
-      { fps: 10, qrbox: 250 },
-      false,
-    )
+    if (startedRef.current) return
+    startedRef.current = true
+
+    const scanner = new Html5Qrcode('qr-reader', { verbose: false })
     scannerRef.current = scanner
 
-    scanner.render(
-      (decodedText) => {
-        if (navigatedRef.current) return
-        navigatedRef.current = true
-        scanner.clear().catch(() => {}).finally(() => {
-          navigate(`/product/${decodedText}`)
-        })
-      },
-      () => {}, // ignore per-frame errors
-    )
+    Html5Qrcode.getCameras()
+      .then(cameras => {
+        if (!cameras?.length) throw new Error('No camera found')
+        // On mobile, the rear camera is usually last in the list
+        const cameraId = cameras[cameras.length - 1].id
+        return scanner.start(
+          cameraId,
+          { fps: 10, qrbox: { width: 260, height: 100 } },
+          (decodedText) => {
+            if (navigatedRef.current) return
+            navigatedRef.current = true
+            scanner.stop().catch(() => {}).finally(() => {
+              navigate(`/product/${decodedText}`)
+            })
+          },
+          () => {},
+        )
+      })
+      .then(() => setStatus('scanning'))
+      .catch((err) => {
+        setStatus('error')
+        setError(
+          err?.message?.includes('Permission')
+            ? 'Camera access denied. Please allow camera access and try again.'
+            : 'Could not start camera. Try entering the barcode manually.',
+        )
+      })
 
     return () => {
-      scanner.clear().catch(() => {})
+      scanner.stop().catch(() => {})
     }
   }, [navigate])
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col">
-      <style>{`
-        #qr-reader { border: none !important; background: transparent !important; }
-        #qr-reader__header_message { color: #a3a3a3 !important; font-size: 0.8rem !important; }
-        #qr-reader__status_span { color: #a3a3a3 !important; font-size: 0.8rem !important; }
-        #qr-reader__camera_selection { background: #262626 !important; color: #e5e5e5 !important; border: 1px solid #404040 !important; border-radius: 8px !important; padding: 6px 10px !important; }
-        #qr-reader__camera_permission_button, #qr-reader__camera_start_button { background: #f97316 !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 10px 20px !important; font-weight: 600 !important; cursor: pointer !important; }
-        #qr-reader__dashboard_section_swaplink { color: #f97316 !important; }
-        #qr-reader video { border-radius: 12px !important; }
-        #qr-reader img { display: none !important; }
-      `}</style>
-
       {/* Header */}
       <div className="flex items-center gap-4 px-4 pt-12 pb-4">
         <button
@@ -56,10 +64,51 @@ export default function ScannerPage() {
         <h1 className="text-white font-semibold text-lg">Scan Barcode</h1>
       </div>
 
-      {/* Scanner */}
-      <div className="flex-1 flex flex-col items-center justify-start px-4 pt-4">
-        <div className="w-full max-w-sm">
-          <div id="qr-reader" className="rounded-2xl overflow-hidden" />
+      {/* Camera area */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-12 gap-6">
+        <div className="w-full max-w-sm relative">
+          <div id="qr-reader" className="rounded-2xl overflow-hidden bg-neutral-900" />
+
+          {status === 'scanning' && (
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div className="relative w-64 h-24">
+                <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-brand-400 rounded-tl-sm" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-brand-400 rounded-tr-sm" />
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-brand-400 rounded-bl-sm" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-brand-400 rounded-br-sm" />
+                <div className="absolute inset-x-2 top-1/2 h-0.5 bg-brand-400/60 blur-[1px] animate-pulse" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-center space-y-2">
+          {status === 'init' && (
+            <div className="flex items-center gap-2 text-neutral-400">
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">Starting camera…</span>
+            </div>
+          )}
+          {status === 'scanning' && (
+            <div className="flex items-center gap-2 text-neutral-400">
+              <ScanLine className="w-4 h-4 text-brand-400" />
+              <span className="text-sm">Point camera at a barcode</span>
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="space-y-3">
+              <p className="text-red-400 text-sm">{error}</p>
+              <button
+                onClick={() => navigate(-1)}
+                className="text-brand-400 hover:text-brand-300 text-sm underline"
+              >
+                Go back and enter barcode manually
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
