@@ -58,8 +58,6 @@ export default function ProductPage() {
         ingredients: product.ingredients_text_fr ?? product.ingredients_text ?? '',
         origins: product.origins ?? product.manufacturing_places ?? '',
         user_location: location,
-        quantity: product.quantity ?? '',
-        ecoscore_grade: product.ecoscore_grade ?? '',
       })
       setAnalysisResult(result)
     } catch (e: unknown) {

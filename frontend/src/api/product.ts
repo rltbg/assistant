@@ -15,8 +15,6 @@ export interface AnalyzePayload {
   ingredients: string
   origins: string
   user_location: string
-  quantity: string
-  ecoscore_grade: string
 }
 
 export async function analyzeProduct(payload: AnalyzePayload): Promise<AnalysisResult> {

@@ -42,4 +42,3 @@ Return a single JSON object with this exact structure:
 - If distance is not findable, estimate it from geography (e.g. Istanbul to Paris ≈ 2700 km road)
 - If transport mode is unknown, infer it from the distance and product type (sea for intercontinental, road for continental)
 - Order steps chronologically: ingredients → manufacturing → distribution → consumer
-- Do NOT include any CO₂ values — that is computed separately

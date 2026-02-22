@@ -26,8 +26,6 @@ class AnalyzeRequest(BaseModel):
     ingredients: str = ""
     origins: str = ""
     user_location: str = "France"
-    quantity: str = ""
-    ecoscore_grade: str = ""
 
 
 @app.get("/health")
@@ -58,9 +56,6 @@ async def analyze_product(req: AnalyzeRequest):
     from analysis import run_analysis
 
     try:
-        from co2_calculator import parse_weight_kg
-        product_weight_kg = parse_weight_kg(req.quantity)
-
         result = await asyncio.to_thread(
             run_analysis,
             product_name=req.product_name,
@@ -68,8 +63,6 @@ async def analyze_product(req: AnalyzeRequest):
             ingredients=req.ingredients,
             origins=req.origins,
             user_location=req.user_location,
-            product_weight_kg=product_weight_kg,
-            ecoscore_grade=req.ecoscore_grade or None,
         )
         return result
     except KeyError as e:

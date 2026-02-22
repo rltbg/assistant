@@ -59,7 +59,6 @@ export interface LifecycleStep {
   description: string
   transport_mode?: 'sea' | 'road' | 'air' | 'rail' | null
   distance_km?: number | null
-  co2_kg?: number
   transport_to_next?: string | null
 }
 
@@ -70,8 +69,6 @@ export interface AnalysisSource {
 
 export interface AnalysisResult {
   lifecycle: LifecycleStep[]
-  total_co2_kg: number
-  co2_score: 'A' | 'B' | 'C' | 'D' | 'E'
   summary: string
   sources: AnalysisSource[]
 }

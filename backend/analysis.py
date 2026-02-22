@@ -30,8 +30,6 @@ def run_analysis(
     ingredients: str,
     origins: str,
     user_location: str,
-    product_weight_kg: float = 0.1,
-    ecoscore_grade: str | None = None,
 ) -> dict:
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
@@ -69,7 +67,6 @@ Return ONLY a valid JSON object, no other text."""
                     "title": chunk.web.title or chunk.web.uri,
                     "uri": chunk.web.uri,
                 })
-        # Deduplicate by uri
         seen = set()
         unique = []
         for s in sources:
@@ -80,19 +77,6 @@ Return ONLY a valid JSON object, no other text."""
 
     result = _extract_json(text)
     result["sources"] = sources
-
-    # Apply emission-factor formula to get co2_kg per step + total
-    from co2_calculator import apply_emission_factors, grade_from_co2
-    lifecycle, total_co2_kg = apply_emission_factors(result["lifecycle"], product_weight_kg)
-    result["lifecycle"] = lifecycle
-    result["total_co2_kg"] = total_co2_kg
-
-    # Use OpenFoodFacts ecoscore if available, otherwise derive from our calculation
-    if ecoscore_grade and ecoscore_grade.lower() not in ("unknown", "not-applicable"):
-        result["co2_score"] = ecoscore_grade.upper()
-    else:
-        result["co2_score"] = grade_from_co2(total_co2_kg)
-
     return result
 
 

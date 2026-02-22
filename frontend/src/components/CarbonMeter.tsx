@@ -1,7 +1,6 @@
 import { Leaf, Lock, MapPin, ArrowDown, ExternalLink } from 'lucide-react'
 import type { AnalysisResult } from '../types/product'
 
-
 interface CarbonMeterProps {
   result?: AnalysisResult
   onRunAnalysis: () => void
@@ -9,61 +8,19 @@ interface CarbonMeterProps {
   error?: string | null
 }
 
-const scoreConfig: Record<string, { color: string; bg: string; label: string; emoji: string }> = {
-  A: { color: '#22c55e', bg: 'bg-green-900/40',  label: 'Excellent', emoji: '🌿' },
-  B: { color: '#84cc16', bg: 'bg-lime-900/40',   label: 'Good',      emoji: '✅' },
-  C: { color: '#eab308', bg: 'bg-yellow-900/40', label: 'Moderate',  emoji: '⚠️' },
-  D: { color: '#f97316', bg: 'bg-orange-900/40', label: 'High',      emoji: '🔴' },
-  E: { color: '#ef4444', bg: 'bg-red-900/40',    label: 'Very High', emoji: '💀' },
-}
-
 export default function CarbonMeter({ result, onRunAnalysis, loading, error }: CarbonMeterProps) {
   return (
     <div className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800 space-y-5">
       <div className="flex items-center gap-2">
         <Leaf className="w-4 h-4 text-brand-400" />
-        <h3 className="font-semibold text-sm text-neutral-200">Carbon Footprint</h3>
+        <h3 className="font-semibold text-sm text-neutral-200">Product Journey</h3>
       </div>
 
       {result ? (
         <div className="space-y-5">
-          {/* Score header */}
-          {(() => {
-            const cfg = scoreConfig[result.co2_score] ?? scoreConfig.E
-            const pct = Math.min((result.total_co2_kg / 4) * 100, 100)
-            return (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-end gap-2">
-                      <span className="text-4xl font-bold text-white">{result.total_co2_kg.toFixed(3)}</span>
-                      <span className="text-neutral-400 mb-1">kg CO₂</span>
-                    </div>
-                  </div>
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl"
-                    style={{ backgroundColor: cfg.color }}
-                  >
-                    {result.co2_score}
-                  </div>
-                </div>
-                <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, backgroundColor: cfg.color }}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>{cfg.emoji}</span>
-                  <span className="font-medium" style={{ color: cfg.color }}>{cfg.label}</span>
-                </div>
-              </div>
-            )
-          })()}
-
           {/* Lifecycle steps */}
           <div className="space-y-1">
-            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-3">Product journey</p>
+            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-3">Supply chain</p>
             {result.lifecycle.map((step, i) => (
               <div key={i}>
                 <div className="flex gap-3">
@@ -90,13 +47,6 @@ export default function CarbonMeter({ result, onRunAnalysis, loading, error }: C
                         {step.distance_km && (
                           <span className="text-neutral-700">· {step.distance_km.toLocaleString()} km</span>
                         )}
-                      </div>
-                    )}
-                    {step.co2_kg !== undefined && step.co2_kg > 0 && (
-                      <div className="mt-1 text-xs text-neutral-600 font-mono">
-                        {step.co2_kg < 0.001
-                          ? '<0.001'
-                          : step.co2_kg.toFixed(3)} kg CO₂
                       </div>
                     )}
                   </div>
@@ -139,18 +89,12 @@ export default function CarbonMeter({ result, onRunAnalysis, loading, error }: C
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-end gap-2 opacity-30">
-            <span className="text-4xl font-bold text-white">—</span>
-            <span className="text-neutral-400 mb-1">kg CO₂</span>
-          </div>
-          <div className="h-2 bg-neutral-800 rounded-full" />
-
           {error ? (
             <p className="text-sm text-red-400">{error}</p>
           ) : (
             <p className="text-sm text-neutral-500 flex items-center gap-1.5">
               <Lock className="w-3 h-3" />
-              Run analysis to trace this product's carbon journey
+              Trace where this product comes from
             </p>
           )}
 
@@ -170,7 +114,7 @@ export default function CarbonMeter({ result, onRunAnalysis, loading, error }: C
             ) : (
               <>
                 <Leaf className="w-5 h-5" />
-                Run Analysis
+                Trace Journey
               </>
             )}
           </button>
